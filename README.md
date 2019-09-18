@@ -15,7 +15,7 @@ const { ValrV1RestClient, ValrV1WsClient } = require('valr-api-client')
 var apiKey = '<your-api-key>',
 var apiSecret = '<your-api-secret>',
 
-const  valrClient = new ValrV1RestClient(apiKey.baseUrl, apiKey.apiKey, apiKey.apiSecret)
+const  valrClient = new ValrV1RestClient(apiKey, apiSecret)
 valrClient
     .account
     .getBalances()
@@ -24,15 +24,18 @@ valrClient
 
 e.g. To subscribe to the trade web socket events
 ```js
-var valrWsTradeClient = new ValrV1WsClient(apiKey.wsUrl, apiKey.apiKey, apiKey.apiSecret, ValrV1WsClient.WSPATHS.TRADE)
+var valrWsTradeClient = new ValrV1WsClient(apiKey, apiSecret, ValrV1WsClient.WSPATHS.TRADE)
 valrWsTradeClient.connect();
 
 valrWsTradeClient.on('connected', () => console.log('TRADE:', 'connected'));
 
 valrWsTradeClient.on('message', (data) => {
-    console.log('TRADE:', util.inspect(data, { depth: 99, colors: true }));
     if (data.type == 'AUTHENTICATED') {
         valrWsTradeClient.subscribe(ValrV1WsClient.TRADE_SUBSCRIPTIONS.AGGREGATED_ORDERBOOK_UPDATE, 'BTCZAR');
+    } else if (data.type == ValrV1WsClient.TRADE_SUBSCRIPTIONS.AGGREGATED_ORDERBOOK_UPDATE) {
+        console.log('TRADE OrderBook Updated:', util.inspect(data, { depth: 99, colors: true }));
+    } else {
+        console.log(data);
     }
 });
 
