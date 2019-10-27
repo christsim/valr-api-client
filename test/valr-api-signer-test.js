@@ -1,7 +1,7 @@
 var { signRequest } = require('../src/valr-v1-signer.js');
 var expect = require('chai').expect;
 
-describe('API Admin', function () {
+describe('VALR API Signer', function () {
 
     this.bail(true);
 
