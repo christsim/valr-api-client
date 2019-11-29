@@ -6,22 +6,26 @@ const EventEmitter = require('events')
 class ValrV1WsClient extends EventEmitter {
 
     /**
-     * 
+     *
      * @param {*} apiKey - the api key
      * @param {*} apiSecret - the api secret
      * @param {*} path - path to connect to, from ValrV1WsClient.WSPATHS
      * @param {*} baseUrl - web socket base url
      * @param {*} reconnectIntervalSeconds - delay between reconnects
      */
-    constructor(apiKey, apiSecret, path, baseUrl = null, reconnectIntervalSeconds = 10) {
+    constructor(apiKey, apiSecret, path, options = {}) {
+
+        const { baseUrl = 'wss://api.valr.com', reconnectIntervalSeconds = 10, forceReconnectSeconds = 0 } = options;
+
         super();
 
-        this.baseUrl = baseUrl || 'wss://api.valr.com';
+        this.baseUrl = baseUrl;
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
         this.path = path;
         this.reconnectInterval = reconnectIntervalSeconds * 1000;
-        this.pingInterval = 30 * 1000;
+        this.pingIntervalSeconds = 30 * 1000;
+        this.forceReconnectSeconds = forceReconnectSeconds * 1000;
     }
 
     /**
@@ -45,8 +49,8 @@ class ValrV1WsClient extends EventEmitter {
 
     /**
      * subscribe to a web socket event
-     * @param {*} event 
-     * @param {*} pairs 
+     * @param {*} event
+     * @param {*} pairs
      */
     subscribe(event, pairs) {
         if (!Array.isArray(pairs)) {
@@ -69,13 +73,19 @@ class ValrV1WsClient extends EventEmitter {
             return;
         }
 
-        var headers = this._authProvider(path)
+        const headers = this._authProvider(path)
         this.ws = new WebSocket(`${this.baseUrl}${path}`, {
             headers,
         });
 
+        // force a reconnect every so often
+        if (this.forceReconnectSeconds > 0) {
+            setTimeout(() => this.ws.close(1000, 'force reconnect'), this.forceReconnectSeconds);
+        }
+
         this.ws.on('open', () => {
             this.emit('connected');
+            this.open = true;
             this._schedulePing();
         });
         this.ws.on('message', (data) => {
@@ -84,24 +94,28 @@ class ValrV1WsClient extends EventEmitter {
                 this._schedulePing();
             }
             this.emit('message', data);
-        })
+        });
         this.ws.on('error', (err => {
             this.emit('ws error', err);
-        }))
+            this.close(1000, err);
+        }));
         this.ws.on('close', (code, reason) => {
             console.log('ws close, reconnecting...', code, reason);
+            this.open = false;
             this.emit('close', code, reason);
 
-            if (!this.reconnectInterval > 0) {
+            if (code == 1000 && reason == 'force reconnect') {
+                setTimeout(() => this._connect(path), 0);
+            } else if (this.reconnectInterval > 0) {
                 setTimeout(() => this._connect(path), this.reconnectInterval);
             }
         });
     };
 
     _authProvider(path) {
-        var headers = new Object()
-        var timestamp = (new Date()).getTime();
-        var signature = signer.signRequest(this.apiSecret, timestamp, 'GET', path, '');
+        const headers = new Object()
+        const timestamp = (new Date()).getTime();
+        const signature = signer.signRequest(this.apiSecret, timestamp, 'GET', path, '');
 
         headers['X-VALR-API-KEY'] = this.apiKey;
         headers["X-VALR-SIGNATURE"] = signature;
@@ -114,11 +128,17 @@ class ValrV1WsClient extends EventEmitter {
      * keep the connection alive
      */
     _schedulePing() {
-        setTimeout(() => {
-            if (!this.disconnected) {
-                this.ws.send(JSON.stringify({ type: 'PING' }))
-            }
-        }, this.pingInterval)
+        if (this.open) {
+            setTimeout(() => {
+                try {
+                    if (this.open && !this.disconnected) {
+                        this.ws.send(JSON.stringify({ type: 'PING' }))
+                    }
+                } catch(err) {
+                    console.log('unable to send ping', err);
+                }
+            }, this.pingIntervalSeconds)
+        };
     }
 }
 
