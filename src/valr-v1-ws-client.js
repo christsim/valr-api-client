@@ -97,7 +97,7 @@ class ValrV1WsClient extends EventEmitter {
         });
         this.ws.on('error', (err => {
             this.emit('ws error', err);
-            this.close(1000, err);
+            this.ws.close(1000, err);
         }));
         this.ws.on('close', (code, reason) => {
             console.log('ws close, reconnecting...', code, reason);
