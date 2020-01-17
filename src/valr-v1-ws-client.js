@@ -6,16 +6,11 @@ const EventEmitter = require('events')
 class ValrV1WsClient extends EventEmitter {
 
     /**
-     *
-     * @param {*} apiKey - the api key
-     * @param {*} apiSecret - the api secret
      * @param {*} path - path to connect to, from ValrV1WsClient.WSPATHS
-     * @param {*} baseUrl - web socket base url
-     * @param {*} reconnectIntervalSeconds - delay between reconnects
      */
-    constructor(apiKey, apiSecret, path, options = {}) {
+    constructor(path, options = {}) {
 
-        const { baseUrl = 'wss://api.valr.com', reconnectIntervalSeconds = 10, forceReconnectSeconds = 0 } = options;
+        const { baseUrl = 'wss://api.valr.com', apiKey, apiSecret, reconnectIntervalSeconds = 10, forceReconnectSeconds = 0 } = options;
 
         super();
 
@@ -113,15 +108,18 @@ class ValrV1WsClient extends EventEmitter {
     };
 
     _authProvider(path) {
-        const headers = new Object()
-        const timestamp = (new Date()).getTime();
-        const signature = signer.signRequest(this.apiSecret, timestamp, 'GET', path, '');
+        if(this.apiKey && this.apiSecret) {
+            const headers = new Object()
+            const timestamp = (new Date()).getTime();
+            const signature = signer.signRequest(this.apiSecret, timestamp, 'GET', path, '');
 
-        headers['X-VALR-API-KEY'] = this.apiKey;
-        headers["X-VALR-SIGNATURE"] = signature;
-        headers['X-VALR-TIMESTAMP'] = timestamp;
-
-        return headers
+            headers['X-VALR-API-KEY'] = this.apiKey;
+            headers["X-VALR-SIGNATURE"] = signature;
+            headers['X-VALR-TIMESTAMP'] = timestamp;
+            return headers
+        } else {
+            return {};
+        }
     }
 
     /**

@@ -9,7 +9,7 @@ var valrClient = new ValrV1RestClient(apiKey, apiSecret)
 valrClient.account.getBalances().then((balance) => console.log(balance))
 
 // account
-const valrWsAccountClient = new ValrV1WsClient(apiKey, apiSecret, ValrV1WsClient.WSPATHS.ACCOUNT)
+const valrWsAccountClient = new ValrV1WsClient(ValrV1WsClient.WSPATHS.ACCOUNT, { apiKey, apiSecret })
 valrWsAccountClient.connect();
 valrWsAccountClient.on('connected', () => console.log('ACCOUNT:', 'connected'));
 valrWsAccountClient.on('message', (data) => console.log('ACCOUNT:', data));
@@ -18,7 +18,7 @@ valrWsAccountClient.on('close', (code, reason) => console.log('ACCOUNT:', code, 
 valrWsAccountClient.on('disconnected', () => console.log('ACCOUNT:', 'disconnected'));
 
 //trade
-const valrWsTradeClient = new ValrV1WsClient(apiKey, apiSecret, ValrV1WsClient.WSPATHS.TRADE, { forceReconnectSeconds: 30 })
+const valrWsTradeClient = new ValrV1WsClient(ValrV1WsClient.WSPATHS.TRADE, { apiKey, apiSecret })
 valrWsTradeClient.connect();
 
 valrWsTradeClient.on('connected', () => console.log('TRADE:', 'connected'));

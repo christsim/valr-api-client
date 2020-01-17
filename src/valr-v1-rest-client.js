@@ -5,7 +5,7 @@ const request = require('superagent')
 class ValrV1RestClient {
 
     /**
-     * 
+     *
      * @param {*} apiKey - the api key
      * @param {*} apiSecret - the api secret
      * @param {*} baseUrl - the rest api base url
@@ -27,7 +27,7 @@ class ValrV1RestClient {
                 getCurrencies: () => this.callPublic('get', '/v1/public/currencies'),
                 getOrderTypesList: () => this.callPublic('get', '/v1/public/ordertypes'),
                 getOrderTypes: (pair) => this.callPublic('get', `/v1/public/${pair}/ordertypes`),
-                getOrderBook: () => this.callPublic('get', `/v1/public/${pair}/orderbook`)
+                getOrderBook: (pair) => this.callPublic('get', `/v1/public/${pair}/orderbook`)
             }
         } else {
             this.public = {
@@ -91,9 +91,9 @@ class ValrV1RestClient {
     }
 
     /**
-     * 
+     *
      * call with no authentication
-     * 
+     *
      */
     async callPublic(verb, path, body = '') {
         if (typeof body != 'string') {
@@ -115,9 +115,9 @@ class ValrV1RestClient {
     }
 
     /**
-     * 
+     *
      * call with authentication
-     * 
+     *
      */
     async call(verb, path, body = '') {
         if (typeof body != 'string') {
