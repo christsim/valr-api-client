@@ -24,7 +24,7 @@ valrClient
 
 e.g. To subscribe to the trade web socket events
 ```js
-var valrWsTradeClient = new ValrV1WsClient(apiKey, apiSecret, ValrV1WsClient.WSPATHS.TRADE)
+var valrWsTradeClient = new ValrV1WsClient(ValrV1WsClient.WSPATHS.TRADE, { apiKey, apiSecret })
 valrWsTradeClient.connect();
 
 valrWsTradeClient.on('connected', () => console.log('TRADE:', 'connected'));
