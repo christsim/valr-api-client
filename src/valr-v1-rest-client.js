@@ -38,7 +38,7 @@ class ValrV1RestClient {
                 getCurrencies: () => this.call('get', '/v1/public/currencies'),
                 getOrderTypesList: () => this.call('get', '/v1/public/ordertypes'),
                 getOrderTypes: (pair) => this.call('get', `/v1/public/${pair}/ordertypes`),
-                getOrderBook: () => this.call('get', `/v1/public/${pair}/orderbook`)
+                getOrderBook: (pair) => this.call('get', `/v1/public/${pair}/orderbook`)
             }
 
             this.account = {
