@@ -51,7 +51,7 @@ class ValrV1RestClient {
             this.account = {
                 getBalances: () => this.call('get', '/v1/account/balances'),
                 getTransactionHistory: (skip = 0, limit = 100) => this.call('get', `/v1/account/transactionhistory?skip=${skip}&limit=${limit}`),
-                getMyTradeHistory: (pair, limit) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`)
+                getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`)
             }
 
             this.wallet = {
