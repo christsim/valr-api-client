@@ -3,6 +3,7 @@ const util = require('util')
 
 
 const valrClient = new ValrV1RestClient()
+valrClient.public.getTime().then(console.log);
 valrClient.public.getOrderBook('btczar').then((orderbook) => console.log(orderbook))
 
 
