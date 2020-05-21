@@ -1,6 +1,13 @@
 const signer = require('./valr-v1-signer.js');
 const request = require('superagent')
+const Agent = require('agentkeepalive').HttpsAgent;
 
+const keepaliveAgent = new Agent({
+    maxSockets: 20,
+    maxFreeSockets: 5,
+    timeout: 60000,
+    freeSocketTimeout: 30000 // free socket keepalive for 30 seconds
+});
 
 class ValrV1RestClient {
 
@@ -102,6 +109,7 @@ class ValrV1RestClient {
 
         try {
             return (await request[verb](this.baseUrl + path)
+                .agent(keepaliveAgent)
                 .set('Accept', 'application/json')
                 .send(body))
                 .body
@@ -129,6 +137,7 @@ class ValrV1RestClient {
 
         try {
             return (await request[verb](this.baseUrl + path)
+                .agent(keepaliveAgent)
                 .set('X-VALR-API-KEY', this.apiKey)
                 .set('X-VALR-SIGNATURE', signature)
                 .set('X-VALR-TIMESTAMP', timestamp)
