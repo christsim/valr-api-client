@@ -24,10 +24,11 @@ valrWsTradeClient.connect();
 valrWsTradeClient.on('connected', () => console.log('TRADE:', 'connected'));
 valrWsTradeClient.on('message', (data) => {
     console.log('TRADE:', util.inspect(data, { depth: 99, colors: true }));
-    if (data.type == 'AUTHENTICATED') {
+    if (data.type === 'AUTHENTICATED') {
         valrWsTradeClient.subscribe(ValrV1WsClient.TRADE_SUBSCRIPTIONS.AGGREGATED_ORDERBOOK_UPDATE, 'BTCZAR');
     }
 });
 valrWsTradeClient.on('error', (err) => console.log('TRADE:', err));
 valrWsTradeClient.on('close', (code, reason) => console.log('TRADE:', code, reason));
 valrWsTradeClient.on('disconnected', () => console.log('TRADE:', 'disconnected'));
+

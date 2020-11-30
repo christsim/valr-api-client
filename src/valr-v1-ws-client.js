@@ -68,6 +68,8 @@ class ValrV1WsClient extends EventEmitter {
             return;
         }
 
+        console.log(`WS Connecting to ${path}`);
+
         const headers = this._authProvider(path)
         this.ws = new WebSocket(`${this.baseUrl}${path}`, {
             headers,
@@ -95,7 +97,7 @@ class ValrV1WsClient extends EventEmitter {
             this.ws.close(1000, err);
         }));
         this.ws.on('close', (code, reason) => {
-            console.log('ws close, reconnecting...', code, reason);
+            console.log('ws close', code, reason);
             this.open = false;
             this.emit('close', code, reason);
 

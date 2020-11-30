@@ -56,9 +56,11 @@ class ValrV1RestClient {
 
             this.wallet = {
                 crypto: {
+                    getAddressBook: (currency = null) => this.call('get', `/v1/wallet/crypto/address-book${currency ? '/' + currency : ''}`),
                     getCryptoDepositAddress: (currency) => this.call('get', `/v1/wallet/crypto/${currency}/deposit/address`),
                     getWithdrawalInfo: (currency) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw`),
                     createNewWithdrawal: (currency, address, amount, paymentReference = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { address, paymentReference, amount }),
+                    createNewWithdrawalFromAddressBook: (currency, addressBookId, amount, paymentReference = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { addressBookId, paymentReference, amount }),
                     getWithdrawalStatus: (currency, id) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw/${id}`),
                     getDepositHistory: (currency, skip = 0, limit = 100) => this.call('get', `/v1/wallet/crypto/${currency}/deposit/history?skip=${skip}&limit=${limit}`),
                     getWithdrawHistory: (currency, skip = 0, limit = 100) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw/history?skip=${skip}&limit=${limit}`),
@@ -86,10 +88,10 @@ class ValrV1RestClient {
                 createMarketSellOrder: (pair, baseAmount, customerOrderId = null) => this.call('post', '/v1/orders/market', { customerOrderId, pair, side: this.SELL, baseAmount }),
                 getAllOpenOrders: () => this.call('get', `/v1/orders/open`),
                 getOrderHistory: () => this.call('get', `/v1/orders/history`),
-                getOrderHistorySummaryForOrderId: (orderId) => this.call('get', `/v1/orders/history/summary/order/orderid/${orderId}`),
-                getOrderHistorySummaryForCustomerOrderId: (customerOrderId) => this.call('get', `/v1/orders/history/summary/order/orderid/${customerOrderId}`),
-                getOrderHistoryDetailsForOrderId: (orderId) => this.call('get', `/v1/orders/history/details/order/orderid/${orderId}`),
-                getOrderHistoryDetailsForCustomerOrderId: (customerOrderId) => this.call('get', `/v1/orders/history/details/order/orderid/${orderId}`),
+                getOrderHistorySummaryForOrderId: (orderId) => this.call('get', `/v1/orders/history/summary/orderid/${orderId}`),
+                getOrderHistorySummaryForCustomerOrderId: (customerOrderId) => this.call('get', `/v1/orders/history/summary/customerorderid/${customerOrderId}`),
+                getOrderHistoryDetailForOrderId: (orderId) => this.call('get', `/v1/orders/history/detail/orderid/${orderId}`),
+                getOrderHistoryDetailForCustomerOrderId: (customerOrderId) => this.call('get', `/v1/orders/history/detail/customerorderid/${customerOrderId}`),
                 cancelOrder: (pair, orderId = null, customerOrderId = null) => this.call('delete', `/v1/orders/order`, { pair, orderId, customerOrderId }),
                 getOrderStatusForOrderId: (pair, orderId) => this.call('get', `/v1/orders/${pair}/orderid/${orderId}`),
                 getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/order/customerorderid/${customerOrderId}`)
