@@ -25,6 +25,21 @@ class ValrV1RestClient {
         this.SELL = 'SELL'
         this.BUY = 'BUY'
 
+        // stop limit types
+        this.STOP_LOSS_LIMIT = 'STOP_LOSS_LIMIT'
+        this.TAKE_PROFIT_LIMIT = 'TAKE_PROFIT_LIMIT'
+
+        // time in force
+        this.GOOD_TILL_CANCELLED = 'GTC'
+        this.FILL_OR_KILL = 'FOK'
+        this.IMMEDIATE_OR_CANCEL = 'IOC'
+
+        // batch order types
+        this.BATCH_PLACE_LIMIT = 'PLACE_LIMIT'
+        this.BATCH_PLACE_STOP_LIMIT = 'PLACE_STOP_LIMIT'
+        this.BATCH_PLACE_MARKET = 'PLACE_MARKET'
+        this.BATCH_CANCEL_ORDER = 'CANCEL_ORDER'
+
         if (!apiKey || !apiSecret) {
             this.public = {
                 getTime: () => this.callPublic('get', '/v1/public/time'),
@@ -60,7 +75,7 @@ class ValrV1RestClient {
                     getCryptoDepositAddress: (currency) => this.call('get', `/v1/wallet/crypto/${currency}/deposit/address`),
                     getWithdrawalInfo: (currency) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw`),
                     createNewWithdrawal: (currency, address, amount, paymentReference = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { address, paymentReference, amount }),
-                    createNewWithdrawalFromAddressBook: (currency, addressBookId, amount, paymentReference = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { addressBookId, paymentReference, amount }),
+                    createNewWithdrawalFromAddressBook: (currency, addressBookId, amount = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { addressBookId, amount }),
                     getWithdrawalStatus: (currency, id) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw/${id}`),
                     getDepositHistory: (currency, skip = 0, limit = 100) => this.call('get', `/v1/wallet/crypto/${currency}/deposit/history?skip=${skip}&limit=${limit}`),
                     getWithdrawHistory: (currency, skip = 0, limit = 100) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw/history?skip=${skip}&limit=${limit}`),
@@ -83,7 +98,8 @@ class ValrV1RestClient {
             }
 
             this.exchange = {
-                createLimitOrder: (pair, side, quantity, price, postOnly = false, customerOrderId = null) => this.call('post', '/v1/orders/limit', { customerOrderId, pair, side, quantity, price, postOnly }),
+                createLimitOrder: (pair, side, quantity, price, timeInForce = this.GOOD_TILL_CANCELLED, postOnly = false, customerOrderId = null) => this.call('post', '/v1/orders/limit', { customerOrderId, pair, side, quantity, price, postOnly }),
+                createStopLimitOrder: (pair, side, type, quantity, price, stopPrice, timeInForce = this.GOOD_TILL_CANCELLED, customerOrderId = null) => this.call('post', '/v1/orders/stoplimit', {pair, side, type, quantity, price, stopPrice, timeInForce, customerOrderId}),
                 createMarketBuyOrder: (pair, quoteAmount, customerOrderId = null) => this.call('post', '/v1/orders/market', { customerOrderId, pair, side: this.BUY, quoteAmount }),
                 createMarketSellOrder: (pair, baseAmount, customerOrderId = null) => this.call('post', '/v1/orders/market', { customerOrderId, pair, side: this.SELL, baseAmount }),
                 getAllOpenOrders: () => this.call('get', `/v1/orders/open`),
@@ -93,8 +109,9 @@ class ValrV1RestClient {
                 getOrderHistoryDetailForOrderId: (orderId) => this.call('get', `/v1/orders/history/detail/orderid/${orderId}`),
                 getOrderHistoryDetailForCustomerOrderId: (customerOrderId) => this.call('get', `/v1/orders/history/detail/customerorderid/${customerOrderId}`),
                 cancelOrder: (pair, orderId = null, customerOrderId = null) => this.call('delete', `/v1/orders/order`, { pair, orderId, customerOrderId }),
+                cancelAllOrders: (pair) => this.call('delete', '/v1/orders', { pair }),
                 getOrderStatusForOrderId: (pair, orderId) => this.call('get', `/v1/orders/${pair}/orderid/${orderId}`),
-                getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/order/customerorderid/${customerOrderId}`)
+                getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/order/customerorderid/${customerOrderId}`),
             }
         }
     }
@@ -134,8 +151,8 @@ class ValrV1RestClient {
             body = JSON.stringify(body)
         }
 
-        var timestamp = (new Date()).getTime();
-        var signature = signer.signRequest(this.apiSecret, timestamp, verb, path, body);
+        const timestamp = (new Date()).getTime();
+        const signature = signer.signRequest(this.apiSecret, timestamp, verb, path, body);
 
         try {
             return (await request[verb](this.baseUrl + path)
