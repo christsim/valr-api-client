@@ -15,30 +15,36 @@ class ValrV1RestClient {
      *
      * @param {*} apiKey - the api key
      * @param {*} apiSecret - the api secret
+     * @param {*} subAccountPublicId - the sub account public id
      * @param {*} baseUrl - the rest api base url
      */
-    constructor(apiKey = null, apiSecret = null, baseUrl = null) {
-        this.baseUrl = baseUrl || 'https://api.valr.com'
-        this.apiKey = apiKey
-        this.apiSecret = apiSecret
+    constructor({   apiKey = null,
+                    apiSecret = null,
+                    subAccountPublicId = null,
+                    baseUrl = null
+    }) {
+        this.baseUrl = baseUrl || 'https://api.valr.com';
+        this.apiKey = apiKey;
+        this.apiSecret = apiSecret;
+        this.subAccountPublicId = subAccountPublicId ? subAccountPublicId : '';
 
-        this.SELL = 'SELL'
-        this.BUY = 'BUY'
+        this.SELL = 'SELL';
+        this.BUY = 'BUY';
 
         // stop limit types
-        this.STOP_LOSS_LIMIT = 'STOP_LOSS_LIMIT'
-        this.TAKE_PROFIT_LIMIT = 'TAKE_PROFIT_LIMIT'
+        this.STOP_LOSS_LIMIT = 'STOP_LOSS_LIMIT';
+        this.TAKE_PROFIT_LIMIT = 'TAKE_PROFIT_LIMIT';
 
         // time in force
-        this.GOOD_TILL_CANCELLED = 'GTC'
-        this.FILL_OR_KILL = 'FOK'
-        this.IMMEDIATE_OR_CANCEL = 'IOC'
+        this.GOOD_TILL_CANCELLED = 'GTC';
+        this.FILL_OR_KILL = 'FOK';
+        this.IMMEDIATE_OR_CANCEL = 'IOC';
 
         // batch order types
-        this.BATCH_PLACE_LIMIT = 'PLACE_LIMIT'
-        this.BATCH_PLACE_STOP_LIMIT = 'PLACE_STOP_LIMIT'
-        this.BATCH_PLACE_MARKET = 'PLACE_MARKET'
-        this.BATCH_CANCEL_ORDER = 'CANCEL_ORDER'
+        this.BATCH_PLACE_LIMIT = 'PLACE_LIMIT';
+        this.BATCH_PLACE_STOP_LIMIT = 'PLACE_STOP_LIMIT';
+        this.BATCH_PLACE_MARKET = 'PLACE_MARKET';
+        this.BATCH_CANCEL_ORDER = 'CANCEL_ORDER';
 
         if (!apiKey || !apiSecret) {
             this.public = {
@@ -65,8 +71,12 @@ class ValrV1RestClient {
 
             this.account = {
                 getBalances: () => this.call('get', '/v1/account/balances'),
+                getAllBalances: () => this.call('get', '/v1/account/balances/all'),
                 getTransactionHistory: (skip = 0, limit = 100) => this.call('get', `/v1/account/transactionhistory?skip=${skip}&limit=${limit}`),
-                getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`)
+                getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`),
+                getSubAccounts: () => this.call('get', '/v1/account/subaccount'),
+                registerSubAccount: (label) => this.call('post', '/v1/account/subaccount', { label }),
+                internalTransfer: (toAccountPublicId, currencyCode, amount, fromAccountPublicId = '0') => this.call('post', '/v1/account/subaccount/transfer', { fromAccountPublicId, toAccountPublicId, currencyCode, amount })
             }
 
             this.wallet = {
@@ -152,7 +162,7 @@ class ValrV1RestClient {
         }
 
         const timestamp = (new Date()).getTime();
-        const signature = signer.signRequest(this.apiSecret, timestamp, verb, path, body);
+        const signature = signer.signRequest(this.apiSecret, timestamp, verb, path, body, this.subAccountPublicId);
 
         try {
             return (await request[verb](this.baseUrl + path)
@@ -160,6 +170,7 @@ class ValrV1RestClient {
                 .set('X-VALR-API-KEY', this.apiKey)
                 .set('X-VALR-SIGNATURE', signature)
                 .set('X-VALR-TIMESTAMP', timestamp)
+                .set('X-VALR-SUB-ACCOUNT-ID', this.subAccountPublicId)
                 .set('Accept', 'application/json')
                 .send(body))
                 .body

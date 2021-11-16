@@ -10,13 +10,14 @@ class ValrV1WsClient extends EventEmitter {
      */
     constructor(path, options = {}) {
 
-        const { baseUrl = 'wss://api.valr.com', apiKey, apiSecret, reconnectIntervalSeconds = 10, forceReconnectSeconds = 0 } = options;
+        const { baseUrl = 'wss://api.valr.com', apiKey, apiSecret, subAccountPublicId = '', reconnectIntervalSeconds = 10, forceReconnectSeconds = 0 } = options;
 
         super();
 
         this.baseUrl = baseUrl;
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
+        this.subAccountPublicId = subAccountPublicId ? subAccountPublicId : '';
         this.path = path;
         this.reconnectInterval = reconnectIntervalSeconds * 1000;
         this.pingIntervalSeconds = 30 * 1000;
@@ -97,9 +98,9 @@ class ValrV1WsClient extends EventEmitter {
             this.ws.close(1000, err);
         }));
         this.ws.on('close', (code, reason) => {
-            console.log('ws close', code, reason);
+            console.log('ws close', code, reason.toString());
             this.open = false;
-            this.emit('close', code, reason);
+            this.emit('close', code, reason.toString());
 
             if (code == 1000 && reason == 'force reconnect') {
                 setTimeout(() => this._connect(path), 0);
@@ -113,11 +114,12 @@ class ValrV1WsClient extends EventEmitter {
         if(this.apiKey && this.apiSecret) {
             const headers = new Object()
             const timestamp = (new Date()).getTime();
-            const signature = signer.signRequest(this.apiSecret, timestamp, 'GET', path, '');
+            const signature = signer.signRequest(this.apiSecret, timestamp, 'GET', path, '', this.subAccountPublicId);
 
             headers['X-VALR-API-KEY'] = this.apiKey;
             headers["X-VALR-SIGNATURE"] = signature;
             headers['X-VALR-TIMESTAMP'] = timestamp;
+            headers['X-VALR-SUB-ACCOUNT-ID'] = this.subAccountPublicId;
             return headers
         } else {
             return {};
