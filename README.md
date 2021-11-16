@@ -12,10 +12,10 @@ e.g.  To call a rest end-point
 const { ValrV1RestClient, ValrV1WsClient } = require('valr-api-client')
 
 // N.B. keep these safe.  don't commit to source control etc...
-var apiKey = '<your-api-key>',
-var apiSecret = '<your-api-secret>',
+var apiKey = '<your-api-key>';
+var apiSecret = '<your-api-secret>';
 
-const  valrClient = new ValrV1RestClient(apiKey, apiSecret)
+const  valrClient = new ValrV1RestClient({ apiKey, apiSecret })
 valrClient
     .account
     .getBalances()

@@ -8,13 +8,15 @@ const crypto = require('crypto');
  * @param {*} verb - Http verb - GET, POST, PUT or DELETE
  * @param {*} path - path excluding host name, e.g. '/api/v1/withdraw
  * @param {*} body - http request body as a string, optional
+ * @param {*} subAccountId - http request body as a string, optional
  */
-function signRequest(apiKeySecret, timestamp, verb, path, body = '') {
+function signRequest(apiKeySecret, timestamp, verb, path, body = '', subAccountId = '') {
     return crypto.createHmac('sha512', apiKeySecret)
         .update(timestamp.toString())
         .update(verb.toUpperCase())
         .update(path)
         .update(body)
+        .update(subAccountId)
         .digest('hex');
 }
 
