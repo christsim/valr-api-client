@@ -22,7 +22,7 @@ class ValrV1RestClient {
                     apiSecret = null,
                     subAccountPublicId = null,
                     baseUrl = null
-    }) {
+    } = {}) {
         this.baseUrl = baseUrl || 'https://api.valr.com';
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
@@ -122,6 +122,13 @@ class ValrV1RestClient {
                 cancelAllOrders: (pair) => this.call('delete', '/v1/orders', { pair }),
                 getOrderStatusForOrderId: (pair, orderId) => this.call('get', `/v1/orders/${pair}/orderid/${orderId}`),
                 getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/order/customerorderid/${customerOrderId}`),
+
+                createBatchOrders: (customerBatchId, requests) => this.call('post', '/v1/batch/orders', {customerBatchId, requests}),
+                batchCreateLimitOrder: (pair, side, quantity, price, timeInForce = this.GOOD_TILL_CANCELLED, postOnly = false, customerOrderId = null) => ({ type: this.BATCH_PLACE_LIMIT, data: {customerOrderId, pair, side, quantity, price, postOnly }}),
+                batchCreateStopLimitOrder: (pair, side, type, quantity, price, stopPrice, timeInForce = this.GOOD_TILL_CANCELLED, customerOrderId = null) => ({ type: this.BATCH_PLACE_STOP_LIMIT, data: { pair, side, type, quantity, price, stopPrice, timeInForce, customerOrderId}}),
+                batchCreateMarketBuyOrder: (pair, quoteAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data:{ customerOrderId, pair, side: this.BUY, quoteAmount }}),
+                batchCreateMarketSellOrder: (pair, baseAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data:{ customerOrderId, pair, side: this.SELL, baseAmount }}),
+                batchCancelOrder: (pair, orderId = null, customerOrderId = null) => ({ type: this.BATCH_CANCEL_ORDER, data:{ pair, orderId, customerOrderId }}),
             }
         }
     }
