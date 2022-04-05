@@ -1,6 +1,6 @@
 {
   "name": "valr-api-client",
-  "version": "1.1.01",
+  "version": "1.1.02",
   "description": "VALR Api Client",
   "main": "index.js",
   "license": "MIT",
@@ -30,7 +30,7 @@
     "websockets",
     "exchange"
   ],
-  "author": "Chris Tsimogiannis",
+  "author": "Chris Tsim",
   "bugs": {
     "url": "https://github.com/christsim/valr-api-client/issues"
   },
