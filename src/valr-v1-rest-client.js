@@ -92,7 +92,7 @@ class ValrV1RestClient {
                 },
                 fiat: {
                     getBankAccounts: (currency) => this.call('get', `/v1/wallet/fiat/${currency}/accounts`),
-                    createNewWithdrawal: (currency, linkedBankAccountId, amount) => this.call('post', `/v1/wallet/fiat/${currency}/withdraw`, { linkedBankAccountId, amount })
+                    createNewWithdrawal: (currency, linkedBankAccountId, amount, fast = false) => this.call('post', `/v1/wallet/fiat/${currency}/withdraw`, { linkedBankAccountId, amount, fast })
                 }
             }
 
