@@ -1,6 +1,9 @@
 const signer = require('./valr-v1-signer.js');
-const request = require('superagent')
+const request = require('superagent');
+require('superagent-proxy')(request);
 const Agent = require('agentkeepalive').HttpsAgent;
+
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
 const keepaliveAgent = new Agent({
     maxSockets: 20,
@@ -17,16 +20,22 @@ class ValrV1RestClient {
      * @param {*} apiSecret - the api secret
      * @param {*} subAccountPublicId - the sub account public id
      * @param {*} baseUrl - the rest api base url
+     * @param {*} proxyUrl - the proxy url
+     * @param {*} proxyCert - the proxy cert
      */
     constructor({   apiKey = null,
                     apiSecret = null,
                     subAccountPublicId = null,
-                    baseUrl = null
-    } = {}) {
+                    baseUrl = null,
+                    proxyUrl = null,
+                    proxyCert = null
+    }) {
         this.baseUrl = baseUrl || 'https://api.valr.com';
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
         this.subAccountPublicId = subAccountPublicId ? subAccountPublicId : '';
+        this.proxyUrl = proxyUrl;
+        this.proxyCert = proxyCert;
 
         this.SELL = 'SELL';
         this.BUY = 'BUY';
@@ -74,7 +83,7 @@ class ValrV1RestClient {
                 getAllBalances: () => this.call('get', '/v1/account/balances/all'),
                 getTransactionHistory: (skip = 0, limit = 100) => this.call('get', `/v1/account/transactionhistory?skip=${skip}&limit=${limit}`),
                 getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`),
-                getSubAccounts: () => this.call('get', '/v1/account/subaccount'),
+                getSubAccounts: () => this.call('get', '/v1/account/subaccounts'),
                 registerSubAccount: (label) => this.call('post', '/v1/account/subaccount', { label }),
                 internalTransfer: (toAccountPublicId, currencyCode, amount, fromAccountPublicId = '0') => this.call('post', '/v1/account/subaccount/transfer', { fromAccountPublicId, toAccountPublicId, currencyCode, amount })
             }
@@ -92,7 +101,8 @@ class ValrV1RestClient {
                 },
                 fiat: {
                     getBankAccounts: (currency) => this.call('get', `/v1/wallet/fiat/${currency}/accounts`),
-                    createNewWithdrawal: (currency, linkedBankAccountId, amount, fast = false) => this.call('post', `/v1/wallet/fiat/${currency}/withdraw`, { linkedBankAccountId, amount, fast })
+                    createBankAccount: (currency, bank, accountHolder,accountNumber,branchCode,accountType) => this.call('post', `/v1/wallet/fiat/${currency}/accounts`, {bank, accountHolder,accountNumber,branchCode,accountType}),
+                    createNewWithdrawal: (currency, linkedBankAccountId, amount) => this.call('post', `/v1/wallet/fiat/${currency}/withdraw`, { linkedBankAccountId, amount })
                 }
             }
 
@@ -130,7 +140,88 @@ class ValrV1RestClient {
                 batchCreateMarketSellOrder: (pair, baseAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data:{ customerOrderId, pair, side: this.SELL, baseAmount }}),
                 batchCancelOrder: (pair, orderId = null, customerOrderId = null) => ({ type: this.BATCH_CANCEL_ORDER, data:{ pair, orderId, customerOrderId }}),
             }
+
+            this.portfolio = {
+                getSummary: () => this.call('get', `/v1/portfolio/summary`),
+                getTotal: (today = this.getISOToday(), yesterday = this.getISOYesterday) => this.call('get', `/v1/portfolio/total?startDate=${today}&endDate=${yesterday}`),
+                getTotalInCurrency: (refCurrency) => this.call('get', `/v1/portfolio/${refCurrency}/total`),
+            }
+
+            this.wire = {
+                accounts: {
+                    getWireAccounts: (skip = 0, limit = 10) => this.call('get', `/v1/wire/accounts?skip=${skip}&limit=${limit}`),
+                    deleteWireAccount: (id) => this.call('delete', `/v1/wire/accounts/${id}`),
+                    getDepositInstructions: (id) => this.call('get', `/wire/accounts/${id}/instructions`),
+
+                    addIBANWireAccount: (accountType,  accountNumber,  accountHolderName, accountHolderCity,
+                                         accountHolderCountry,  accountHolderAddressLine1,  accountHolderAddressLine2 = "",
+                                         accountHolderDistrict = "",  accountHolderPostalCode,  bankName = "",
+                                         bankCity,  bankCountry,  bankAddressLine1 = "",
+                                         bankAddressLine2 = "",  bankDistrict = ""
+                    ) =>  this.call('post', '/v1/wire/accounts',
+                        { accountType,  accountNumber,  accountHolderName, accountHolderCity,
+                            accountHolderCountry,  accountHolderAddressLine1,  accountHolderAddressLine2,
+                            accountHolderDistrict,  accountHolderPostalCode,  bankName,
+                            bankCity,  bankCountry,  bankAddressLine1,
+                            bankAddressLine2,  bankDistrict}),
+
+                    addSWIFTWireAccount: (accountType,  accountNumber, routingNumber,  accountHolderName, accountHolderCity,
+                                          accountHolderCountry,  accountHolderAddressLine1,  accountHolderAddressLine2 = "",
+                                          accountHolderDistrict = "",  accountHolderPostalCode,  bankName,
+                                          bankCity,  bankCountry,  bankAddressLine1 = "",
+                                          bankAddressLine2 = "",  bankDistrict = ""
+                    ) =>  this.call('post', '/v1/wire/accounts',
+                        {accountType,  accountNumber, routingNumber,  accountHolderName, accountHolderCity,
+                            accountHolderCountry,  accountHolderAddressLine1,  accountHolderAddressLine2,
+                            accountHolderDistrict,  accountHolderPostalCode,  bankName,
+                            bankCity,  bankCountry,  bankAddressLine1,
+                            bankAddressLine2,  bankDistrict}),
+
+                    addUSWireAccount: ( accountType,  accountNumber,  accountHolderName, accountHolderCity,
+                                        accountHolderCountry,  accountHolderAddressLine1,  accountHolderAddressLine2 = "",
+                                        accountHolderDistrict = "",  accountHolderPostalCode,  bankName = "",
+                                        bankCity = "",  bankCountry,  bankAddressLine1 = "",
+                                        bankAddressLine2 = "",  bankDistrict = ""
+                    ) =>  this.call('post', '/v1/wire/accounts',
+                        {accountType,  accountNumber,  accountHolderName, accountHolderCity,
+                            accountHolderCountry,  accountHolderAddressLine1,  accountHolderAddressLine2,
+                            accountHolderDistrict,  accountHolderPostalCode,  bankName,
+                            bankCity,  bankCountry,  bankAddressLine1,
+                            bankAddressLine2,  bankDistrict}),
+
+                    //authoriseWireBankAccount: (resourceIdentifier) => this.call('put', '/v1/wire/accounts/authorise', {resourceIdentifier}),
+                },
+
+                withdrawals: {
+                    createWithdrawal: (wireBankAccountId, amount) => this.call("post", '/v1/wire/withdrawals', {wireBankAccountId, amount}),
+                    //authoriseWithdrawal: (resourceIdentifier) => this.call("put", "/v1/wire/withdrawals/authorise", {resourceIdentifier})
+                },
+
+            }
+
+            this.pay = {
+                getPayLimitDetails: () => this.call('get', '/v1/pay/limits'),
+                getPayID: () => this.call('get', '/v1/pay/reference'),
+                getSentPaymentsList: () => this.call('get', `/v1/pay/sent`),
+                getPaymentByIdentifier: (identifier) => this.call('get', `/v1/pay/identifier/${identifier}`),
+                getPaymentByTransactionID: (transactionid) => this.call('get', `/v1/pay/transactionid/${transactionid}`),
+                makePayment: (currency = "ZAR", amount, recipientPayId = "", recipientEmail = "", recipientCell = "", recipientNote = "", senderNote = "", anonymous = false) => this.call('post', '/v1/pay',{ currency, amount, recipientPayId, recipientEmail, recipientCell, recipientNote, senderNote, anonymous}),
+            }
+
         }
+    }
+
+    /**
+     * Date helper
+     */
+    getISOToday() {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    getISOYesterday(){
+        let yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1)
+        return yesterday.toISOString().split('T')[0];
     }
 
     /**
@@ -142,10 +233,12 @@ class ValrV1RestClient {
         if (typeof body != 'string') {
             body = JSON.stringify(body)
         }
-
+        console.log(this.baseUrl + path)
         try {
             return (await request[verb](this.baseUrl + path)
                 .agent(keepaliveAgent)
+                .proxy(this.proxyUrl)
+                .ca(this.proxyCert)
                 .set('Accept', 'application/json')
                 .send(body))
                 .body
@@ -170,10 +263,13 @@ class ValrV1RestClient {
 
         const timestamp = (new Date()).getTime();
         const signature = signer.signRequest(this.apiSecret, timestamp, verb, path, body, this.subAccountPublicId);
+        console.log(this.baseUrl + path);
 
         try {
             return (await request[verb](this.baseUrl + path)
                 .agent(keepaliveAgent)
+                .proxy(this.proxyUrl)
+                .ca(this.proxyCert)
                 .set('X-VALR-API-KEY', this.apiKey)
                 .set('X-VALR-SIGNATURE', signature)
                 .set('X-VALR-TIMESTAMP', timestamp)
@@ -183,7 +279,7 @@ class ValrV1RestClient {
                 .body
         } catch (err) {
             if (err.response) {
-                throw new Error(`Error when calling: ${verb}:${path} - Status: ${err.response.status} - ${JSON.stringify(err.response.body)}`)
+                console.error(`Error when calling: ${verb}:${path} - Status: ${err.response.status} - ${JSON.stringify(err.response.body)}`)
             } else {
                 throw err
             }
