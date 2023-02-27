@@ -85,7 +85,7 @@ class ValrV1RestClient {
                 getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`),
                 getSubAccounts: () => this.call('get', '/v1/account/subaccounts'),
                 registerSubAccount: (label) => this.call('post', '/v1/account/subaccount', { label }),
-                internalTransfer: (toAccountPublicId, currencyCode, amount, fromAccountPublicId = '0') => this.call('post', '/v1/account/subaccount/transfer', { fromAccountPublicId, toAccountPublicId, currencyCode, amount })
+                internalTransfer: (toAccountPublicId, currencyCode, amount, fromAccountPublicId = '0') => this.call('post', '/v1/account/subaccounts/transfer', { fromAccountPublicId, toAccountPublicId, currencyCode, amount })
             }
 
             this.wallet = {
