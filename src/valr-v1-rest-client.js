@@ -179,6 +179,7 @@ class ValrV1RestClient {
                 .set('X-VALR-TIMESTAMP', timestamp)
                 .set('X-VALR-SUB-ACCOUNT-ID', this.subAccountPublicId)
                 .set('Accept', 'application/json')
+                .set('Content-type', 'application/json')
                 .send(body))
                 .body
         } catch (err) {
