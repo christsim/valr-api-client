@@ -74,7 +74,7 @@ class ValrV1RestClient {
             }
 
             this.account = {
-                getBalances: () => this.call('get', '/v1/account/balances?excludeZeroBalances=true'),
+                getBalances: (excludeZeroBalances = true) => this.call('get', `/v1/account/balances?excludeZeroBalances=${excludeZeroBalances}`),
                 getAllBalances: () => this.call('get', '/v1/account/balances/all?excludeZeroBalances=true'),
                 getTransactionHistory: (skip = 0, limit = 100) => this.call('get', `/v1/account/transactionhistory?skip=${skip}&limit=${limit}`),
                 getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`),
