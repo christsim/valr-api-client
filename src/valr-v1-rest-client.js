@@ -18,10 +18,10 @@ class ValrV1RestClient {
      * @param {*} subAccountPublicId - the sub account public id
      * @param {*} baseUrl - the rest api base url
      */
-    constructor({   apiKey = null,
-                    apiSecret = null,
-                    subAccountPublicId = null,
-                    baseUrl = null
+    constructor({ apiKey = null,
+        apiSecret = null,
+        subAccountPublicId = null,
+        baseUrl = null
     } = {}) {
         this.baseUrl = baseUrl || 'https://api.valr.com';
         this.apiKey = apiKey;
@@ -69,14 +69,18 @@ class ValrV1RestClient {
                 getOrderBook: (pair) => this.call('get', `/v1/public/${pair}/orderbook`)
             }
 
+            this.apiKeys = {
+                getInfo: () => this.call('get', '/v1/account/api-keys/current'),
+            }
+
             this.account = {
-                getBalances: () => this.call('get', '/v1/account/balances'),
-                getAllBalances: () => this.call('get', '/v1/account/balances/all'),
+                getBalances: () => this.call('get', '/v1/account/balances?excludeZeroBalances=true'),
+                getAllBalances: () => this.call('get', '/v1/account/balances/all?excludeZeroBalances=true'),
                 getTransactionHistory: (skip = 0, limit = 100) => this.call('get', `/v1/account/transactionhistory?skip=${skip}&limit=${limit}`),
                 getMyTradeHistory: (pair, limit = 100) => this.call('get', `/v1/account/${pair}/tradehistory?limit=${limit}`),
-                getSubAccounts: () => this.call('get', '/v1/account/subaccount'),
+                getSubAccounts: () => this.call('get', '/v1/account/subaccounts'),
                 registerSubAccount: (label) => this.call('post', '/v1/account/subaccount', { label }),
-                internalTransfer: (toAccountPublicId, currencyCode, amount, fromAccountPublicId = '0') => this.call('post', '/v1/account/subaccount/transfer', { fromAccountPublicId, toAccountPublicId, currencyCode, amount })
+                internalTransfer: (toAccountPublicId, currencyCode, amount, fromAccountPublicId = '0') => this.call('post', '/v1/account/subaccounts/transfer', { fromAccountPublicId, toAccountPublicId, currencyCode, amount })
             }
 
             this.wallet = {
@@ -92,6 +96,7 @@ class ValrV1RestClient {
                 },
                 fiat: {
                     getBankAccounts: (currency) => this.call('get', `/v1/wallet/fiat/${currency}/accounts`),
+                    createBankAccount: (currency, bank, accountHolder, accountNumber, branchCode, accountType) => this.call('post', `/v1/wallet/fiat/${currency}/accounts`, { bank, accountHolder, accountNumber, branchCode, accountType }),
                     createNewWithdrawal: (currency, linkedBankAccountId, amount, fast = false) => this.call('post', `/v1/wallet/fiat/${currency}/withdraw`, { linkedBankAccountId, amount, fast })
                 }
             }
@@ -107,9 +112,31 @@ class ValrV1RestClient {
                 getOrderStatus: (pair, id) => this.call('get', `/v1/simple/${pair}/order/${id}`),
             }
 
+            this.loans = {
+                getRates: () => this.call('get', `/v1/loans/rates`),
+                getOpenLoans: () => this.call('get', `/v1/loans/open`),
+                getLoanHistory: (currencySymbol) => this.call('get', `/v1/loans/credit-history?currencySymbol=${currencySymbol}`),
+                getLoanUpdateHistory: (currencySymbol) => this.call('get', `/v1/loans/update-history?currencySymbol=${currencySymbol}`),
+                createNewLoan: (currencySymbol, hourlyRate, amount) => this.call('post', `/v1/loans`, { currencySymbol, hourlyRate, amount }),
+                increaseLoanAmount: (currencySymbol, increaseLoanAmountBy, loanId) => this.call('put', `/v1/loans/increase`, { currencySymbol, increaseLoanAmountBy, loanId }),
+                changeRate: (currencySymbol, hourlyRate, loanId) => this.call('put', `/v1/loans/rate`, { currencySymbol, hourlyRate, loanId }),
+                requestUnlock: (currencySymbol, unlockAmount, loanId) => this.call('put', `/v1/loans/unlock`, { currencySymbol, unlockAmount, loanId }),
+                cancelUnlockRequest: (currencySymbol, loanId) => this.call('delete', `/v1/loans/unlock`, { currencySymbol, loanId }),
+            }
+
+            this.staking = {
+                getRates: () => this.call('get', `/v1/staking/rates`),
+                getRatesForCurrency: (currencySymbol) => this.call('get', `/v1/staking/rates/${currencySymbol}`),
+                getStakingBalance: (currencySymbol) => this.call('get', `/v1/staking/balances/${currencySymbol}`),
+                getStakingRewards: (currencySymbol, skip = 0, limit = 100) => this.call('get', `/v1/staking/rewards?${currencySymbol}&skip=${skip}&limit=${limit}`),
+                getStakingHistory: (currencySymbol, skip = 0, limit = 100) => this.call('get', `/v1/staking/history?${currencySymbol}&skip=${skip}&limit=${limit}`),
+                stake: (currencySymbol, amount) => this.call('post', `/v1/staking/stake`, { currencySymbol, amount }),
+                unstake: (currencySymbol) => this.call('post', `/v1/staking/un-stake`, { currencySymbol, amount }),
+            }
+
             this.exchange = {
                 createLimitOrder: (pair, side, quantity, price, timeInForce = this.GOOD_TILL_CANCELLED, postOnly = false, customerOrderId = null) => this.call('post', '/v1/orders/limit', { customerOrderId, pair, side, quantity, price, postOnly }),
-                createStopLimitOrder: (pair, side, type, quantity, price, stopPrice, timeInForce = this.GOOD_TILL_CANCELLED, customerOrderId = null) => this.call('post', '/v1/orders/stoplimit', {pair, side, type, quantity, price, stopPrice, timeInForce, customerOrderId}),
+                createStopLimitOrder: (pair, side, type, quantity, price, stopPrice, timeInForce = this.GOOD_TILL_CANCELLED, customerOrderId = null) => this.call('post', '/v1/orders/stoplimit', { pair, side, type, quantity, price, stopPrice, timeInForce, customerOrderId }),
                 createMarketBuyOrder: (pair, quoteAmount, customerOrderId = null) => this.call('post', '/v1/orders/market', { customerOrderId, pair, side: this.BUY, quoteAmount }),
                 createMarketSellOrder: (pair, baseAmount, customerOrderId = null) => this.call('post', '/v1/orders/market', { customerOrderId, pair, side: this.SELL, baseAmount }),
                 getAllOpenOrders: () => this.call('get', `/v1/orders/open`),
@@ -123,12 +150,12 @@ class ValrV1RestClient {
                 getOrderStatusForOrderId: (pair, orderId) => this.call('get', `/v1/orders/${pair}/orderid/${orderId}`),
                 getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/order/customerorderid/${customerOrderId}`),
 
-                createBatchOrders: (customerBatchId, requests) => this.call('post', '/v1/batch/orders', {customerBatchId, requests}),
-                batchCreateLimitOrder: (pair, side, quantity, price, timeInForce = this.GOOD_TILL_CANCELLED, postOnly = false, customerOrderId = null) => ({ type: this.BATCH_PLACE_LIMIT, data: {customerOrderId, pair, side, quantity, price, postOnly }}),
-                batchCreateStopLimitOrder: (pair, side, type, quantity, price, stopPrice, timeInForce = this.GOOD_TILL_CANCELLED, customerOrderId = null) => ({ type: this.BATCH_PLACE_STOP_LIMIT, data: { pair, side, type, quantity, price, stopPrice, timeInForce, customerOrderId}}),
-                batchCreateMarketBuyOrder: (pair, quoteAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data:{ customerOrderId, pair, side: this.BUY, quoteAmount }}),
-                batchCreateMarketSellOrder: (pair, baseAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data:{ customerOrderId, pair, side: this.SELL, baseAmount }}),
-                batchCancelOrder: (pair, orderId = null, customerOrderId = null) => ({ type: this.BATCH_CANCEL_ORDER, data:{ pair, orderId, customerOrderId }}),
+                createBatchOrders: (customerBatchId, requests) => this.call('post', '/v1/batch/orders', { customerBatchId, requests }),
+                batchCreateLimitOrder: (pair, side, quantity, price, timeInForce = this.GOOD_TILL_CANCELLED, postOnly = false, customerOrderId = null) => ({ type: this.BATCH_PLACE_LIMIT, data: { customerOrderId, pair, side, quantity, price, postOnly } }),
+                batchCreateStopLimitOrder: (pair, side, type, quantity, price, stopPrice, timeInForce = this.GOOD_TILL_CANCELLED, customerOrderId = null) => ({ type: this.BATCH_PLACE_STOP_LIMIT, data: { pair, side, type, quantity, price, stopPrice, timeInForce, customerOrderId } }),
+                batchCreateMarketBuyOrder: (pair, quoteAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data: { customerOrderId, pair, side: this.BUY, quoteAmount } }),
+                batchCreateMarketSellOrder: (pair, baseAmount, customerOrderId = null) => ({ type: this.BATCH_PLACE_MARKET, data: { customerOrderId, pair, side: this.SELL, baseAmount } }),
+                batchCancelOrder: (pair, orderId = null, customerOrderId = null) => ({ type: this.BATCH_CANCEL_ORDER, data: { pair, orderId, customerOrderId } }),
             }
         }
     }
