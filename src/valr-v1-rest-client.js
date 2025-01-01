@@ -148,7 +148,7 @@ class ValrV1RestClient {
                 cancelOrder: (pair, orderId = null, customerOrderId = null) => this.call('delete', `/v1/orders/order`, { pair, orderId, customerOrderId }),
                 cancelAllOrders: (pair) => this.call('delete', '/v1/orders', { pair }),
                 getOrderStatusForOrderId: (pair, orderId) => this.call('get', `/v1/orders/${pair}/orderid/${orderId}`),
-                getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/order/customerorderid/${customerOrderId}`),
+                getOrderStatusForCustomerOrderId: (pair, customerOrderId) => this.call('get', `/v1/orders/${pair}/customerorderid/${customerOrderId}`),
 
                 createBatchOrders: (customerBatchId, requests) => this.call('post', '/v1/batch/orders', { customerBatchId, requests }),
                 batchCreateLimitOrder: (pair, side, quantity, price, timeInForce = this.GOOD_TILL_CANCELLED, postOnly = false, customerOrderId = null) => ({ type: this.BATCH_PLACE_LIMIT, data: { customerOrderId, pair, side, quantity, price, postOnly } }),
