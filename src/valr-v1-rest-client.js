@@ -86,7 +86,7 @@ class ValrV1RestClient {
             this.wallet = {
                 crypto: {
                     getAddressBook: (currency = null) => this.call('get', `/v1/wallet/crypto/address-book${currency ? '/' + currency : ''}`),
-                    getCryptoDepositAddress: (currency) => this.call('get', `/v1/wallet/crypto/${currency}/deposit/address`),
+                    getCryptoDepositAddress: (currency, networkType = null) => this.call('get', `/v1/wallet/crypto/${currency}/deposit/address${networkType ? `?networkType=${networkType}` : ''}`),
                     getWithdrawalInfo: (currency) => this.call('get', `/v1/wallet/crypto/${currency}/withdraw`),
                     createNewWithdrawal: (currency, address, amount, paymentReference = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { address, paymentReference, amount }),
                     createNewWithdrawalFromAddressBook: (currency, addressBookId, amount = null) => this.call('post', `/v1/wallet/crypto/${currency}/withdraw`, { addressBookId, amount }),
